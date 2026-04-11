@@ -1,30 +1,44 @@
 import { useImage } from "@/store/zustand";
+import { Asset } from "expo-media-library";
 
 import React, { useEffect, useState } from "react";
 import { Image, useWindowDimensions } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
   interpolate,
+  SharedValue,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
 import { runOnJS } from "react-native-worklets";
 
-const Card = ({
+interface CardProps {
+  dataLength: number;
+  index: number;
+  maxItem: number;
+  item: Asset;
+  curIdx: number;
+  animatedValue: SharedValue<number>;
+  functions: {
+    onKeep: () => void;
+    onDelete: () => void;
+  };
+}
+
+const Card: React.FC<CardProps> = ({
   dataLength,
   index,
   maxItem,
   item,
   curIdx,
   animatedValue,
-  setCurIdx,
   functions,
 }) => {
   const translateX = useSharedValue(0);
   const { width } = useWindowDimensions();
-  const { setCurImage, trimImages } = useImage();
-  const MAX = maxItem;
+  const { setCurImage } = useImage();
+
   const isSwiping = useSharedValue(false);
   const direction = useSharedValue(0);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -40,7 +54,7 @@ const Card = ({
     if (curIdx === index) {
       setCurImage(item);
     }
-  }, [curIdx]);
+  }, [curIdx, index, setCurImage, item]);
   const dismiss = (direction: "keep" | "delete") => {
     if (direction === "keep") functions?.onKeep();
     else functions?.onDelete();
@@ -124,14 +138,12 @@ const Card = ({
       <Animated.View
         style={[
           {
-            backgroundColor: item.bgColor,
-
             zIndex: dataLength - index,
             elevation: dataLength - index,
           },
           animatedStyle,
         ]}
-        className="flex-1 absolute  justify-between w-full h-full  p-4"
+        className="flex-1 absolute  justify-between w-full h-full  p-2"
       >
         <Animated.View style={[imageOpacityStyle]} className="flex-1  w-full">
           <Image

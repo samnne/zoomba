@@ -8,7 +8,6 @@ export default function ImagePickerExample({
   curIndex,
   onKeep,
   onDelete,
-  setCurIdx,
 }: {
   curIndex: number;
   onKeep: () => void;
@@ -58,7 +57,6 @@ export default function ImagePickerExample({
             maxItem={3}
             index={relativeIndex}
             animatedValue={animatedValue}
-            setCurIdx={setCurIdx}
           />
         );
       })}

@@ -1,5 +1,13 @@
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/preflight.css" layer(base);
 @import "tailwindcss/utilities.css";
- 
+
 @import "nativewind/theme";
+
+@theme inline {
+  --color-primary: var(--color-purple-600);
+  --color-secondary: var(--color-purple-400);
+  --color-pill: var(--color-white);
+  --color-background: var(--color-purple-100);
+  --color-text: var(--color-neutral-900);
+}

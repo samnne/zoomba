@@ -10,7 +10,7 @@ export default function RootLayout() {
           headerShown: false,
         }}
       />
-      <StatusBar style="dark" />
+      <StatusBar style="auto" />
     </GestureHandlerRootView>
   );
 }

@@ -1,90 +1,113 @@
-import * as ImageManipulator from "expo-image-manipulator";
+import { resizeAssets } from "@/utils/constants";
 import * as MediaLibrary from "expo-media-library";
 import { create } from "zustand";
 // Define a proper type based on what MediaLibrary returns
-type ImageAsset = MediaLibrary.AssetInfo & { uri: string };
 
-type ImageState = {
-  curImage: ImageAsset | null; // Changed from {uri: string}
+export type ImageAsset = MediaLibrary.AssetInfo & { uri: string };
+
+export type ImageState = {
+  curImage: ImageAsset | null;
   setCurImage: (img: ImageAsset | null) => void;
   images: ImageAsset[];
-  endCursor: string | null;
-  hasMore: boolean;
-  setEndCursor: (cursor: string | null) => void;
-  setHasMore: (val: boolean) => void;
   appendImages: (newImages: ImageAsset[]) => void;
   removeImage: (index: number) => void;
-  fetchPhotos: () => Promise<void>;
+  clearImages: () => void;
   trimImages: (curIndex: number) => void;
 };
 
-export const useImage = create<ImageState>((set, get) => {
-  let isFetching = false;
+export const useImage = create<ImageState>((set) => ({
+  curImage: null,
+  setCurImage: (newImage) => set({ curImage: newImage }),
+  images: [],
+  appendImages: (newImages) =>
+    set((state) => {
+      const combined = [...state.images, ...newImages];
+      return { images: combined.slice(-50) };
+    }),
+  removeImage: (index: number) =>
+    set((state) => {
+      const newImages = [...state.images];
+      if (index >= 0 && index < newImages.length) newImages.splice(index, 1);
+      return { images: newImages };
+    }),
+  clearImages: () => set({ images: [], curImage: null }),
+  trimImages: (curIdx: number) =>
+    set((state) => ({ images: state.images.slice(curIdx) })),
+}));
 
-  return {
-    curImage: null,
-    setCurImage: (newImage) => set({ curImage: newImage }),
-    images: [],
-    endCursor: null,
-    hasMore: true,
-    setEndCursor: (cursor) => set({ endCursor: cursor }),
-    setHasMore: (val) => set({ hasMore: val }),
-    appendImages: (newImages) =>
-      set((state) => {
-        const combined = [...state.images, ...newImages];
-        return {
-          images: combined.slice(-50), // keep only last 100
-        };
-      }),
-    removeImage: (index: number) =>
-      set((state) => {
-        const newImages = [...state.images];
-        if (index >= 0 && index < newImages.length) {
-          newImages.splice(index, 1);
-        }
-        return { images: newImages };
-      }),
+type DefaultFeedState = {
+  endCursor: string | null;
+  hasMore: boolean;
+  isFetching: boolean;
+  fetchPhotos: (options?: Partial<MediaLibrary.AssetsOptions>) => Promise<void>;
+  reset: () => void;
+};
 
-    fetchPhotos: async () => {
-      if (isFetching) return;
-      isFetching = true;
+export const useDefaultFeed = create<DefaultFeedState>((set, get) => ({
+  endCursor: null,
+  hasMore: true,
+  isFetching: false,
 
-      try {
-        const { endCursor, hasMore } = get();
-        if (!hasMore) return;
+  reset: () => set({ endCursor: null, hasMore: true, isFetching: false }),
 
-        const albumAssets = await MediaLibrary.getAssetsAsync({
-          first: 10,
-          after: endCursor || undefined,
-          mediaType: ["photo"],
-          sortBy: [[MediaLibrary.SortBy.creationTime, false]],
-        });
+  fetchPhotos: async (options = {}) => {
+    if (get().isFetching || !get().hasMore) return;
+    set({ isFetching: true });
 
-        const formattedAssets: ImageAsset[] = await Promise.all(
-          albumAssets.assets.map(async (info) => {
-            const resized = await ImageManipulator.manipulateAsync(
-              info.uri,
-              [{ resize: { width: 800 } }],
-              { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG },
-            );
+    try {
+      const { endCursor } = get();
+      const result = await MediaLibrary.getAssetsAsync({
+        first: 10,
+        after: endCursor ?? undefined,
+        mediaType: ["photo"],
+        sortBy: [[MediaLibrary.SortBy.creationTime, false]],
+        ...options,
+      });
 
-            return {
-              ...info,
-              uri: resized.uri,
-            };
-          }),
-        );
+      const formatted = await resizeAssets(result.assets);
+      useImage.getState().appendImages(formatted);
+      set({ endCursor: result.endCursor, hasMore: result.hasNextPage });
+    } finally {
+      set({ isFetching: false });
+    }
+  },
+}));
 
-        get().appendImages(formattedAssets);
-        get().setEndCursor(albumAssets.endCursor);
-        get().setHasMore(albumAssets.hasNextPage);
-      } finally {
-        isFetching = false;
-      }
-    },
-    trimImages: (curIdx: number) =>
-      set((state) => ({
-        images: state.images.slice(curIdx),
-      })),
-  };
-});
+type RandomFeedState = {
+  isFetching: boolean;
+  seenOffsets: Set<number>;
+  fetchRandom: (batchSize?: number) => Promise<void>;
+  reset: () => void;
+};
+
+export const useRandomFeed = create<RandomFeedState>((set, get) => ({
+  isFetching: false,
+  seenOffsets: new Set(),
+
+  reset: () => set({ isFetching: false, seenOffsets: new Set() }),
+
+  fetchRandom: async (batchSize = 10) => {
+    if (get().isFetching) return;
+    set({ isFetching: true });
+
+    try {
+      // Fetch all IDs in one go (lightweight, no URIs)
+      const { assets } = await MediaLibrary.getAssetsAsync({
+        first: 1000,
+        mediaType: ["photo"],
+      });
+
+      const { seenOffsets } = get();
+      const unseen = assets.filter((_, i) => !seenOffsets.has(i));
+      const picks = unseen.sort(() => Math.random() - 0.5).slice(0, batchSize);
+      const newSeen = new Set([...seenOffsets, ...picks.map((_, i) => i)]);
+      set({ seenOffsets: newSeen });
+
+      const formatted = await resizeAssets(picks);
+
+      useImage.getState().appendImages(formatted);
+    } finally {
+      set({ isFetching: false });
+    }
+  },
+}));

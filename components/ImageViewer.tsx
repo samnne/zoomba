@@ -1,6 +1,11 @@
-import { useDefaultFeed, useImage, useRandomFeed } from "@/store/zustand";
+import {
+  useAlbumFeed,
+  useDefaultFeed,
+  useImage,
+  useRandomFeed,
+} from "@/store/zustand";
 import * as MediaLibrary from "expo-media-library";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import React, { useEffect, useState } from "react";
 import { Text, View } from "react-native";
 import ImagePickerExample from "./ImagePicker";
@@ -14,13 +19,26 @@ const fetchOptions: {
 const ImageViewer = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  const { curImage, setCurImage, images, removeImage } = useImage();
-  const { fetchPhotos } = useDefaultFeed();
+  const {
+    curImage,
+    setCurImage,
+    images,
+    removeImage,
+    deletedImages,
+    deleteImages,
+  } = useImage();
+  const { fetchPhotos, hasMore } = useDefaultFeed();
   const { fetchRandom } = useRandomFeed();
+  const { fetchAlbumPhotos } = useAlbumFeed();
   const [fetching, setFetching] = useState(false);
   const [curDate, setCurDate] = useState("");
-  const { q, type } = useLocalSearchParams<{ q: string; type: "random" }>();
-  console.log(type);
+  const router = useRouter();
+  const { q, type, aid } = useLocalSearchParams<{
+    q: string;
+    type: "random" | "album";
+    aid?: string;
+  }>();
+
   useEffect(() => {
     const getPermission = async () => {
       try {
@@ -47,21 +65,10 @@ const ImageViewer = () => {
     }
   }, [currentIndex, images, setCurImage]);
 
-  const handleDeleteImage = async () => {
-    if (!curImage?.id) return;
+  const moveToDelete = async () => {
+    if (!curImage) return;
 
-    try {
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== "granted") {
-        alert("Permission needed to delete photos");
-        return;
-      }
-
-      const success = await MediaLibrary.deleteAssetsAsync([curImage.id]);
-    } catch (error) {
-      next();
-      console.log("Delete failed", error);
-    }
+    deleteImages([...deletedImages, curImage]);
   };
 
   const next = () => {
@@ -70,27 +77,35 @@ const ImageViewer = () => {
 
     setCurrentIndex((i) => {
       const newLength = images.length - 1;
-      if (i === 0 && newLength === 0 && type !== "random") {
+      const expression = i === 0 && newLength === 0;
+
+      if (expression && type !== "random" && type !== "album") {
         fetchPhotos();
-      } else if (i === 0 && newLength === 0 && type === "random") {
+      } else if (expression && type === "random" && hasMore) {
         fetchRandom(20);
+      } else if (expression && type === "album" && hasMore && aid) {
+        fetchAlbumPhotos(aid);
       }
 
       if (i >= newLength - 1) {
         return 0;
       }
-
+      if (type === "album" && !hasMore && expression) {
+      }
       return i + 1;
     });
   };
 
   useEffect(() => {
-    if (images.length > 0) {
-      return;
+    // if (images.length > 0) {
+    //   return;
+    // }
+    if (type === "random") {
+      fetchRandom(20);
+    } else if (type === "album" && aid) {
+      fetchAlbumPhotos(aid);
     }
-
-    fetchRandom(20);
-  }, []);
+  }, [aid, type]);
 
   useEffect(() => {
     if (curImage?.creationTime) {
@@ -106,13 +121,13 @@ const ImageViewer = () => {
           borderRadius: 28,
           overflow: "hidden",
         }}
-        className=""
+        className="relative justify-center items-center"
       >
         <ImagePickerExample
           key={images[currentIndex]?.id || currentIndex} // Add a unique key here
           onKeep={next}
           curIndex={currentIndex}
-          onDelete={handleDeleteImage}
+          onDelete={moveToDelete}
         />
         {/* date overlay */}
         <View
@@ -125,7 +140,7 @@ const ImageViewer = () => {
         </View>
 
         <View
-          style={{ position: "absolute", top: 16, zIndex: 50, right: 18 }}
+          style={{ position: "absolute", top: 50, zIndex: 50, right: 18 }}
           pointerEvents="none"
         >
           <Text className="text-primary font-bold bg-white rounded-lg px-2 py-1 shadow">

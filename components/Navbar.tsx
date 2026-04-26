@@ -38,7 +38,7 @@ const Navbar = () => {
       style={{ paddingTop: insets.top }}
       className="w-full p-2 h-30"
     >
-      <View className="px-2 w-full flex-1">
+      <View className="px-2 w-full flex-row justify-between  flex-1">
         <View
           animate={{ scale: pressed ? 1.3 : 1 }}
           transition={{ type: "spring", stiffness: 400, damping: 8, mass: 0.8 }}
@@ -58,6 +58,16 @@ const Navbar = () => {
             />
           </Pressable>
         </View>
+        <Pressable
+          onPressIn={() => setPressed(true)}
+          onPressOut={() => setPressed(false)}
+          onPress={() => router.push("/delete/index")}
+          accessibilityHint="Goes back to previous screen"
+          style={{ backgroundColor: routeStyle.buttonBg }}
+          className="w-10 h-10 rounded-full justify-center items-center"
+        >
+          <Ionicons name="trash" size={20} color={routeStyle.iconColor} />
+        </Pressable>
       </View>
     </View>
   );

@@ -22,7 +22,7 @@ export const CATEGORIES: CatType[] = [
     label: "Album",
     subtitle: "Browse by photo album",
     icon: "image",
-    accent: false,
+    accent: true,
   },
   {
     id: "sort",
@@ -55,8 +55,8 @@ export async function resizeAssets(
       console.log("3. resizing:", uri);
       const resized = await ImageManipulator.manipulateAsync(
         uri,
-        [{ resize: { width: 800 } }],
-        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG },
+        [{ resize: { width: 1080, height: 1440 } }],
+        { compress: 0.9, format: ImageManipulator.SaveFormat.JPEG },
       );
       console.log("4. done:", resized.uri);
 

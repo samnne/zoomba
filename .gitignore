@@ -10,6 +10,8 @@ web-build/
 expo-env.d.ts
 
 # Native
+.vscode/
+
 .kotlin/
 *.orig.*
 *.jks

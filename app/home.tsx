@@ -28,8 +28,8 @@ export default function Home() {
       className="flex-1 items-center"
     >
       {/* header */}
-      <View className="w-full px-5 pt-2 pb-1 flex-row items-center justify-between">
-        <Text className="text-primary  rounded-2xl  font-bold text-4xl">
+      <View className="w-full px-5 mt-4 pt-2 pb-1 flex-row items-center justify-between">
+        <Text className="text-primary  rounded-2xl  font-black text-6xl">
           Zoomba
         </Text>
         <Pressable
@@ -70,19 +70,19 @@ export default function Home() {
         contentContainerClassName="grid grid-cols-1 gap-2 p-4"
         showsVerticalScrollIndicator={false}
       >
-        <CategoryCard
+        {/* <CategoryCard
           item={CATEGORIES[0]}
           onPress={() => router.push("/(features)/date")}
-        />
+        /> */}
         <CategoryCard
           item={CATEGORIES[1]}
           onPress={() => router.push("/(features)/album")}
         />
 
-        <CategoryCard
+        {/* <CategoryCard
           item={CATEGORIES[2]}
           onPress={() => router.push("/(features)/sort")}
-        />
+        /> */}
         <CategoryCard
           item={CATEGORIES[3]}
           onPress={() => router.push("/random?q=viewer&type=random")}

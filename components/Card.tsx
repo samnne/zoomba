@@ -143,13 +143,16 @@ const Card: React.FC<CardProps> = ({
           },
           animatedStyle,
         ]}
-        className="flex-1 absolute  justify-between w-full h-full  p-2"
+        className="flex-1 absolute  justify-between w-full h-full  "
       >
-        <Animated.View style={[imageOpacityStyle]} className="flex-1  w-full">
+        <Animated.View
+          style={[imageOpacityStyle]}
+          className="flex-1  h-full w-full"
+        >
           <Image
-            className="flex-1 w-full rounded-2xl"
+            className="flex-1 w-full h-full  rounded-2xl"
             source={item?.uri ? { uri: item.uri } : undefined}
-            resizeMode="cover"
+            resizeMode="contain"
             // cachePolicy="memory-disk"
             onLoad={() => setImageLoaded(true)}
           />

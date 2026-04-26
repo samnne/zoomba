@@ -5,6 +5,9 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/zoomba_mascot.png",
+    "splash": {
+      "image": "./assets/images/zoomba_mascot.png"
+    },
     "scheme": "tdelete",
     "userInterfaceStyle": "automatic",
 

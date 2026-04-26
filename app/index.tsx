@@ -1,228 +1,222 @@
 import Feather from "@expo/vector-icons/Feather";
 import { useRouter } from "expo-router";
-import {
-  AnimatePresence,
-  Image,
-  MotiView,
-  useAnimationState,
-  View,
-} from "moti";
-import { MotiPressable as Pressable } from "moti/interactions";
+import { AnimatePresence, MotiView } from "moti";
 import { styled } from "nativewind";
 import React, { useState } from "react";
-import { Text, TouchableOpacity } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import {
   SafeAreaView as RNSAV,
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
+
 const SafeAreaView = styled(RNSAV);
 
 interface OnboardingStep {
   id: number;
   headline: string;
   body: string;
-  icon: React.ReactNode;
-  color: string;
+  iconName: React.ComponentProps<typeof Feather>["name"];
 }
-const icons = [
-  <Feather key={20} name="shopping-bag" size={64} color={"#000"} />,
-  <Feather key={21} name="search" size={64} color={"#000"} />,
-  <Feather key={22} name="dollar-sign" size={64} color={"#000"} />,
-  <Feather key={23} name="shield" size={64} color={"#000"} />,
-  <Feather key={24} name="airplay" size={64} color={"#000"} />,
-];
+
 const STEPS: OnboardingStep[] = [
   {
     id: 1,
     headline: "Welcome to Zoomba!",
     body: "Tidy up your memories to make space for more of what matters.",
-    icon: icons[0],
-    color: "bg-primary",
+    iconName: "shopping-bag",
   },
   {
     id: 2,
     headline: "Swipe, Swipe, Sleep",
     body: "Swipe left to delete, right to keep, and sleep better with extra storage.",
-    icon: icons[1],
-    color: "bg-secondary",
+    iconName: "search",
   },
   {
     id: 3,
     headline: "Declutter by Month",
     body: "We organize your gallery into bite-sized sessions so cleaning doesn't feel like a chore.",
-    icon: icons[2],
-    color: "bg-text",
+    iconName: "dollar-sign",
   },
   {
     id: 4,
     headline: "Double Check",
     body: "Nothing is deleted forever until you review your 'Trash' pile. No accidental heartbreaks here.",
-    icon: icons[3],
-    color: "bg-primary",
+    iconName: "shield",
   },
   {
     id: 5,
     headline: "Ready to lose the junk?",
-    body: "Let’s get your account set up so you can start reclaiming your gigabytes.",
-    icon: icons[4],
-    color: "bg-secondary",
+    body: "Let's get your account set up so you can start reclaiming your gigabytes.",
+    iconName: "airplay",
   },
 ];
 
-STEPS.forEach((step, index) => {
-  step.icon = icons[index];
-});
 const Index = () => {
   const insets = useSafeAreaInsets();
   const [currentStep, setCurrentStep] = useState(0);
-  const [direction, setDirection] = useState(1); // 1 = forward, -1 = back
-  const [pressed, setPressed] = useState(false);
+  const [direction, setDirection] = useState(1);
   const router = useRouter();
-  const buttonAnimState = useAnimationState({
-    from: { width: "0%", opacity: 0 },
-    hidden: { width: "0%", opacity: 0 },
-    visible: { width: "33%", opacity: 1 },
-  });
+
+  const step = STEPS[currentStep];
+  const isLastStep = currentStep === STEPS.length - 1;
+  const isFirstStep = currentStep === 0;
 
   const nextStep = () => {
     if (currentStep < STEPS.length - 1) {
-      setDirection(1); // sliding left = next
+      setDirection(1);
       setCurrentStep((prev) => prev + 1);
-      if (currentStep === 0) buttonAnimState.transitionTo("visible");
-      if (currentStep + 1 === STEPS.length - 1)
-        buttonAnimState.transitionTo("hidden");
     }
   };
 
   const prevStep = () => {
     if (currentStep > 0) {
-      setDirection(-1); // sliding right = back
+      setDirection(-1);
       setCurrentStep((prev) => prev - 1);
-      if (currentStep === 1) buttonAnimState.transitionTo("hidden");
     }
   };
 
-  function handleFinish() {
+  const handleFinish = () => {
     router.replace("/home");
-  }
-
-  const step = STEPS[currentStep];
-  const isLastStep = currentStep === STEPS.length - 1;
+  };
 
   return (
-    <SafeAreaView className="flex-1 justify-between p-8 bg-white">
-      <AnimatePresence>
-        <Pressable
-          animate={{
-            scale: pressed ? 0.5 : 1,
-            opacity: pressed ? 0.5 : 1,
-            // rotateZ: pressed ? "25deg" : "0deg",
-          }}
-          transition={{
-            type: "spring",
-          }}
-          style={{
-            paddingHorizontal: 12,
-            paddingVertical: 4,
-            borderRadius: 20,
-            margin: "auto",
-          }}
-        >
-          <Image
-            width={200}
-            height={200}
-            className="w-30 h-30"
-            source={require("../assets/images/zoomba_mascot.png")}
+    <SafeAreaView className="flex-1 bg-white">
+      {/* ── Progress bar ── */}
+      <View className="flex-row gap-1.5 px-6 pt-4">
+        {STEPS.map((s, i) => (
+          <MotiView
+            key={s.id}
+            animate={{
+              backgroundColor: i <= currentStep ? "#9810fa" : "#e9d5ff",
+              scaleY: i === currentStep ? 1.15 : 1,
+            }}
+            transition={{ type: "timing", duration: 300 }}
+            style={{ flex: 1, height: 4, borderRadius: 99 }}
           />
-        </Pressable>
-      </AnimatePresence>
-      {/* Key change forces AnimatePresence to unmount old, mount new */}
+        ))}
+      </View>
+
+      {/* ── Mascot ── */}
+      {/* <View className="items-center mt-6">
+        <Image
+          source={require("../assets/images/zoomba_mascot.png")}
+          style={{ width: 250, height: 250 }}
+          resizeMode="contain"
+        />
+      </View> */}
+
+      {/* ── Slide content ── */}
       <AnimatePresence exitBeforeEnter>
         <MotiView
           key={currentStep}
-          from={{
-            opacity: 0,
-            translateX: direction * 300,
+          from={{ opacity: 0, translateX: direction * 60 }}
+          animate={{ opacity: 1, translateX: 0 }}
+          exit={{ opacity: 0, translateX: direction * -60 }}
+          transition={{ type: "timing", duration: 280 }}
+          style={{
+            flex: 1,
+            alignItems: "center",
+            justifyContent: "center",
+            paddingHorizontal: 32,
           }}
-          animate={{
-            opacity: 1,
-            translateX: 0,
-          }}
-          exit={{
-            opacity: 0,
-            translateX: direction * -300,
-          }}
-          transition={{
-            type: "timing",
-
-            duration: 500,
-          }}
-          className="flex-2 items-center w-full max-w-sm my-8"
+          className=""
         >
-          <MotiView className="flex-1 gap-4 justify-center items-center">
-            <View className="flex-row">
-              <Text className="text-5xl font-bold text-primary">Zoomba</Text>
-            </View>
-            <Text className="text-3xl mt-4 text-text font-bold text-center">
-              {step.headline}
-            </Text>
+          {/* Icon bubble */}
+          <MotiView
+            from={{ scale: 0.7, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", damping: 80, delay: 100 }}
+            style={{
+              width: 96,
+              height: 96,
+              borderRadius: 28,
+              backgroundColor: "#f3e8ff",
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 32,
+              shadowColor: "#9810fa",
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.15,
+              shadowRadius: 16,
+              elevation: 6,
+            }}
+          >
+            <Feather name={step.iconName} size={44} color="#9810fa" />
           </MotiView>
-          <View className="flex-1 gap-2 flex-wrap flex-row justify-center items-center">
-            <Text className="text-center text-gray-500 text-xl w-3/4">
-              {step.body}
-            </Text>
-          </View>
+
+          <Text
+            className="text-3xl font-bold text-text text-center"
+            style={{ lineHeight: 38, marginBottom: 16 }}
+          >
+            {step.headline}
+          </Text>
+
+          <Text
+            className="text-center text-gray-400 text-lg"
+            style={{ lineHeight: 28, maxWidth: 300 }}
+          >
+            {step.body}
+          </Text>
         </MotiView>
       </AnimatePresence>
 
-      <View>
-        <View className="flex-row gap-2 items-stretch">
-          <MotiView
-            state={buttonAnimState}
-            transition={{ type: "timing" }}
-            style={{ overflow: "hidden" }}
-          >
-            <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={prevStep}
-              className="flex-1 rounded-2xl bg-secondary px-6 py-4 justify-center items-center"
-            >
-              <Text className="font-bold text-white text-xl">← Back</Text>
-            </TouchableOpacity>
-          </MotiView>
+      {/* ── Step counter ── */}
+      <Text className="text-center text-gray-300 text-sm mb-4">
+        {currentStep + 1} of {STEPS.length}
+      </Text>
 
-          <TouchableOpacity
-            activeOpacity={0.85}
-            onPress={isLastStep ? handleFinish : nextStep}
-            className="flex-1"
-          >
-            <View
-              animate={{
-                scale: pressed ? 0.95 : 1,
-                opacity: pressed ? 0.9 : 1,
-              }}
-              transition={{ type: "timing" }}
-              className="rounded-2xl shadow bg-primary px-6 py-4 justify-center items-center"
-            >
-              <Text className="font-bold text-white text-xl">
-                {isLastStep ? "Get Started" : "Next"}{" "}
-                <Feather name="arrow-right" size={20} color="white" />
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-      </View>
+      {/* ── Buttons ── */}
+      <View
+        style={{
+          paddingHorizontal: 24,
+          paddingBottom: insets.bottom + 16,
+          gap: 12,
+        }}
+      >
+        {/* Primary CTA */}
+        <TouchableOpacity
+          activeOpacity={0.88}
+          onPress={isLastStep ? handleFinish : nextStep}
+          style={{
+            backgroundColor: "#9810fa",
+            borderRadius: 18,
+            paddingVertical: 18,
+            alignItems: "center",
+            shadowColor: "#9810fa",
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.35,
+            shadowRadius: 14,
+            elevation: 8,
+          }}
+        >
+          <Text style={{ color: "white", fontWeight: "700", fontSize: 18 }}>
+            {isLastStep ? "Get Started 🎉" : "Continue"}
+          </Text>
+        </TouchableOpacity>
 
-      <View className="flex-row justify-center mt-4 gap-2">
-        {STEPS.map((s, i) => (
-          <View
-            key={s.body}
-            animate={{
-              backgroundColor: currentStep === i ? "#9810fa" : "#99a1af",
-            }}
-            className="h-4 w-8 rounded-full"
-          />
-        ))}
+        {/* Back — fades in after step 1 */}
+        <AnimatePresence>
+          {!isFirstStep && (
+            <MotiView
+              from={{ opacity: 0, translateY: 8 }}
+              animate={{ opacity: 1, translateY: 0 }}
+              exit={{ opacity: 0, translateY: 8 }}
+              transition={{ type: "timing", duration: 220 }}
+            >
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={prevStep}
+                style={{ paddingVertical: 14, alignItems: "center" }}
+              >
+                <Text
+                  style={{ color: "#c084fc", fontWeight: "600", fontSize: 16 }}
+                >
+                  ← Back
+                </Text>
+              </TouchableOpacity>
+            </MotiView>
+          )}
+        </AnimatePresence>
       </View>
     </SafeAreaView>
   );

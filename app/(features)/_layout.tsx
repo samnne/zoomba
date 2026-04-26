@@ -1,5 +1,5 @@
 import Navbar from "@/components/Navbar";
-import { Slot, usePathname } from "expo-router";
+import { Stack, usePathname } from "expo-router";
 import { View } from "moti";
 
 export default function RootLayout() {
@@ -9,7 +9,11 @@ export default function RootLayout() {
       <View className={`flex-1  ${pathname.includes("viewer") && "bg-black"}`}>
         <Navbar />
         <View className="flex-1  ">
-          <Slot />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+            }}
+          />
         </View>
       </View>
     </>
